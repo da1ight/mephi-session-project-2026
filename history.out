@@ -1,0 +1,90 @@
+    1  nmcli connection show
+    2  nmcli connection modify "ens160" ipv4.method auto
+    3  nmcli connection up "ens160"
+    4  hostnamectl set-hostname mephi-2026.domain.local
+    5  hostname -f
+    6  ping -c 4 8.8.8.8 > ~/ping.out
+    7  cat ~/ping.out
+    8  dnf update -y
+    9  dnf install -y nginx libcap-ng-utils
+   10  cd /tmp
+   11  dnf download tcpdump
+   12  rpm -ivh tcpdump-4.99.4-10.el10.x86_64.rpm 
+   13  dnf history > ~/dnf.out
+   14  vi ~/dnf.out
+   15  lsblk
+   16  parted /dev/nvme0n1 mklabel gpt
+   17  parted /dev/nvme0n1 mkpart primary ext4 0% 100%
+   18  mkfs.ext4 -L MEPHI_WEB /dev/nvme0n1
+   19  mkdir -p /mephi-web
+   20  echo "LABEL=MEPHI_WEB /mephi-web ext4 defaults 0 0" >> /etc/fstab
+   21  mount -a
+   22  systemctl daemon-reload
+   23  mount -a
+   24  df -h | grep mephi-web
+   25  systemctl status nginx
+   26  systemctl enable --now nginx
+   27  systemctl status nginx
+   28  journalctl -b -u nginx > ~/journalctl.out
+   29  groupadd -g 4444 curators
+   30  groupadd devs
+   31  useradd -G curators curator1
+   32  useradd -G curators curator2
+   33  useradd -u 5501 -G devs user1
+   34  userdel user1
+   35  useradd -u 5501 -G devs user1
+   36  useradd -u 5502 -G devs user2
+   37  useradd -u 5503 -G devs user3
+   38  mkdir -p /data/mephi-2026
+   39  chown root:devs /data/mephi-2026
+   40  chmod 2770 /data/mephi-2026
+   41  setfacl -R -m g:devs:rwX /data/mephi-2026
+   42  setfacl -R -d -m g:devs:rwX /data/mephi-2026
+   43  setfacl -R -m g:curators:rX /data/mephi-2026
+   44  setfacl -R -d -m g:curators:rX /data/mephi-2026
+   45  which tcpdump
+   46  chmod u-s  /usr/sbin/tcpdump
+   47  setcap cap_net_raw+ep /usr/sbin/tcpdump
+   48  getcap /usr/sbin/tcpdump
+   49  sudo -u user1 tcpdump -c 1 -i any
+   50  cat /etc/selinux/config
+   51  setenforce 1
+   52  sed -i 's/^SELINUX=.*/SELINUX=enforcing/' /etc/selinux/config
+   53  semanage fcontext -a -t httpd_sys_content_t "/mephi-web(/.*)?"
+   54  restorecon -Rv /mephi-web
+   55  getenforce
+   56  cat /etc/nginx/nginx.conf
+   57  echo "server {
+   58      listen       80;
+   59      listen       [::]:80;
+   60      server_name  _;
+   61      root         /mephi-web;
+   62      index        index.html;
+   63      location / {
+   64          try_files \$uri \$uri/ =404;
+   65      }
+   66  }" > /etc/nginx/conf.d/mephi.conf
+   67  nginx -T
+   68  nginx -s reload
+   69  echo "Hello from /mephi-web" > /mephi-web/index.html
+   70  chmod 644 /mephi-web/index.html
+   71  ls -la /mephi-web/index.html
+   72  curl http://localhost/
+   73  echo "-:curators:LOCAL" >> /etc/security/access.conf
+   74  authselect current
+   75  authselect select sssd with-pamaccess --force
+   76  chage -M 90 user1 user2 user3 curator1 curator2
+   77  chage -M 90 user1
+   78  chage -M 90 user2
+   79  chage -M 90 user3
+   80  chage -M 90 curator1
+   81  chage -M 90 curator2
+   82  sed -i 's/^# minlen =.*/minlen = 12/' /etc/security/pwquality.conf
+   83  sed -i 's/^minlen =.*/minlen = 12/' /etc/security/pwquality.conf
+   84  grep -r pam_pwquality /etc/pam.d/
+   85  ls -la /etc/pam.d/system-auth /etc/pam.d/password-auth
+   86  grep -R pam_pwquality /etc/pam.d/
+   87  echo "Hello from Student: 374866" > /mephi-web/index.html
+   88  curl http://localhost/
+   89  ls -la
+   90  history > ~/history.out 
